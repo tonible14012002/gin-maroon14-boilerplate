@@ -186,8 +186,8 @@ var (
 
 var (
 	ErrSpaceMemberOrPageNotFound = &Error{
-		Code: NotFoundCode,
-		Error: NotFoundErr,
+		Code:    NotFoundCode,
+		Error:   NotFoundErr,
 		Message: "The member or page does not exist",
 	}
 )

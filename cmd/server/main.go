@@ -12,8 +12,6 @@ import (
 
 	"github.com/Stuhub-io/config"
 	"github.com/Stuhub-io/core/services/auth"
-	"github.com/Stuhub-io/core/services/organization"
-	"github.com/Stuhub-io/core/services/page"
 	"github.com/Stuhub-io/core/services/user"
 	_ "github.com/Stuhub-io/docs"
 	"github.com/Stuhub-io/internal/api"
@@ -87,19 +85,6 @@ func main() {
 		Store: dbStore,
 		Cfg:   cfg,
 	})
-	orgRepository := postgres.NewOrganizationRepository(postgres.NewOrganizationRepositoryParams{
-		Store:          dbStore,
-		Cfg:            cfg,
-		UserRepository: userRepository,
-	})
-	PageRepository := postgres.NewDocRepository(postgres.NewDocRepositoryParams{
-		Cfg:   cfg,
-		Store: dbStore,
-	})
-	organizationInviteRepository := postgres.NewOrganizationInvitesRepository(postgres.NewOrganizationInvitesRepositoryParams{
-		Cfg:   cfg,
-		Store: dbStore,
-	})
 
 	// services
 	authMiddleware := middleware.NewAuthMiddleware(middleware.NewAuthMiddlewareParams{
@@ -120,20 +105,6 @@ func main() {
 		RemoteRoute:    remoteRoute,
 		Hasher:         hasher,
 	})
-	orgService := organization.NewService(organization.NewServiceParams{
-		Config:                       cfg,
-		OrganizationRepository:       orgRepository,
-		UserRepository:               userRepository,
-		TokenMaker:                   tokenMaker,
-		Hasher:                       hasher,
-		Mailer:                       mailer,
-		RemoteRoute:                  remoteRoute,
-		OrganizationInviteRepository: organizationInviteRepository,
-	})
-	pageService := page.NewService(page.NewServiceParams{
-		Config:         cfg,
-		PageRepository: PageRepository,
-	})
 
 	// handlers
 	v1 := r.Group("/v1")
@@ -147,16 +118,6 @@ func main() {
 			Router:      v1,
 			AuthService: authService,
 		})
-		api.UseOrganizationHandler(api.NewOrganizationHandlerParams{
-			Router:         v1,
-			AuthMiddleware: authMiddleware,
-			OrgService:     orgService,
-		})
-		api.UsePageHandle((api.NewPageHandlerParams{
-			Router:         v1,
-			AuthMiddleware: authMiddleware,
-			PageService:    pageService,
-		}))
 	}
 
 	r.GET("/", func(c *gin.Context) {
