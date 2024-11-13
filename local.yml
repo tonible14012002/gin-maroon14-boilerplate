@@ -1,0 +1,71 @@
+version: "3.9"
+services:
+  api:
+    build:
+      context: .
+      dockerfile: build/local/api/Dockerfile
+    container_name: api
+    depends_on:
+      pgsql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    env_file:
+      - build/local/api/.env
+    ports:
+      - 5000:5000
+    volumes:
+      - .:/app:z
+    command: /start.sh
+    networks:
+      - stuhub-api
+
+  pgsql:
+    hostname: postgres
+    build:
+      context: .
+      dockerfile: build/local/postgres/Dockerfile
+    container_name: postgres-db
+    env_file:
+      - build/local/postgres/.env
+    ports:
+      - 5432:5432
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - local_postgres_data:/var/lib/postgresql/data # This is the default path to postgres data storage
+      - local_postgres_data_backups:/backups
+    networks:
+      - stuhub-api
+      
+  redis:
+    build:
+      context: .
+      dockerfile: build/local/redis/Dockerfile
+    container_name: redis-cache
+    env_file:
+      - build/local/redis/.env
+    command: redis-server --save 20 1 --loglevel warning --requirepass stuhub
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "ping"]
+      interval: 10s 
+      timeout: 5s 
+      retries: 2  
+    volumes:
+      - local_redis_data:/root/redis
+    networks:
+      - stuhub-api
+  
+networks:
+  stuhub-api:
+    driver: bridge
+
+volumes:
+  local_postgres_data: {}
+  local_postgres_data_backups: {}
+  local_redis_data: {}
